@@ -1000,7 +1000,7 @@ const ProjectTrackerApp = () => {
                             project.status === 'completado' ? 'bg-green-100 text-green-800' :
                             project.status === 'en_progreso' ? 'bg-blue-100 text-blue-800' :
                             project.status === 'rechazado' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
+                            'bg-gray-100 text-gray-800';
                           }`}>
                             {project.status?.replace('_', ' ').toUpperCase()}
                           </span>
