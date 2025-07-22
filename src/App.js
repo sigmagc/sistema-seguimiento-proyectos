@@ -10,98 +10,99 @@ const ProjectTrackerApp = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [showCreateUser, setShowCreateUser] = useState(false);
-  const [showEditUser, setShowEditUser] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
 
   // Datos iniciales
   useEffect(() => {
-    const initialUsers = [
-      {
-        id: '1',
-        username: 'admin',
-        password: 'admin123',
-        name: 'Administrador Principal',
-        email: 'admin@empresa.com',
-        role: 'administrador',
-        status: 'activo',
-        createdAt: '2025-01-01',
-        createdBy: '1'
-      },
-      {
-        id: '2',
-        username: 'gestor1',
-        password: 'gestor123',
-        name: 'María González',
-        email: 'maria.gonzalez@empresa.com',
-        role: 'gestor_seguimiento',
-        status: 'activo',
-        createdAt: '2025-01-01',
-        createdBy: '1'
-      },
-      {
-        id: '3',
-        username: 'pm1',
-        password: 'pm123',
-        name: 'Carlos Rodríguez',
-        email: 'carlos.rodriguez@empresa.com',
-        role: 'project_manager',
-        status: 'activo',
-        createdAt: '2025-01-01',
-        createdBy: '1'
-      }
-    ];
-
-    const mockProjects = [
-      {
-        id: '1',
-        name: 'Sistema de Gestión Web',
-        status: 'en_progreso',
-        createdBy: '3',
-        approvedBy: '2',
-        needsApproval: false,
-        charter: {
-          description: 'Desarrollo de plataforma web para gestión empresarial',
-          objectives: 'Mejorar eficiencia operativa en 40%',
-          scope: 'Módulos de ventas, inventario y reportes',
-          duration: '180',
-          startDate: '2025-01-01',
-          endDate: '2025-06-30'
+    // Solo cargar datos iniciales si no existen usuarios
+    if (users.length === 0) {
+      const initialUsers = [
+        {
+          id: '1',
+          username: 'admin',
+          password: 'admin123',
+          name: 'Administrador Principal',
+          email: 'admin@empresa.com',
+          role: 'administrador',
+          status: 'activo',
+          createdAt: '2025-01-01',
+          createdBy: '1'
         },
-        milestones: [
-          { 
-            id: '1', 
-            name: 'Análisis de Requisitos', 
-            date: '2025-02-15', 
-            description: 'Definición completa de requisitos', 
-            completed: true, 
-            approved: true,
-            createdBy: '3',
-            approvedBy: '2',
-            needsApproval: false
-          },
-          { 
-            id: '2', 
-            name: 'Diseño de Base de Datos', 
-            date: '2025-03-15', 
-            description: 'Modelo de datos final', 
-            completed: true, 
-            approved: false,
-            createdBy: '3',
-            approvedBy: null,
-            needsApproval: true
-          }
-        ],
-        monthlyBudget: [
-          { id: '1', month: 'Enero 2025', planned: 15000, executed: 14500, createdBy: '3', approvedBy: '2', needsApproval: false },
-          { id: '2', month: 'Febrero 2025', planned: 20000, executed: 18200, createdBy: '3', approvedBy: null, needsApproval: true }
-        ],
-        overallProgress: 45
-      }
-    ];
+        {
+          id: '2',
+          username: 'gestor1',
+          password: 'gestor123',
+          name: 'María González',
+          email: 'maria.gonzalez@empresa.com',
+          role: 'gestor_seguimiento',
+          status: 'activo',
+          createdAt: '2025-01-01',
+          createdBy: '1'
+        },
+        {
+          id: '3',
+          username: 'pm1',
+          password: 'pm123',
+          name: 'Carlos Rodríguez',
+          email: 'carlos.rodriguez@empresa.com',
+          role: 'project_manager',
+          status: 'activo',
+          createdAt: '2025-01-01',
+          createdBy: '1'
+        }
+      ];
 
-    setUsers(initialUsers);
-    setProjects(mockProjects);
-  }, []);
+      const mockProjects = [
+        {
+          id: '1',
+          name: 'Sistema de Gestión Web',
+          status: 'en_progreso',
+          createdBy: '3',
+          approvedBy: '2',
+          needsApproval: false,
+          charter: {
+            description: 'Desarrollo de plataforma web para gestión empresarial',
+            objectives: 'Mejorar eficiencia operativa en 40%',
+            scope: 'Módulos de ventas, inventario y reportes',
+            duration: '180',
+            startDate: '2025-01-01',
+            endDate: '2025-06-30'
+          },
+          milestones: [
+            { 
+              id: '1', 
+              name: 'Análisis de Requisitos', 
+              date: '2025-02-15', 
+              description: 'Definición completa de requisitos', 
+              completed: true, 
+              approved: true,
+              createdBy: '3',
+              approvedBy: '2',
+              needsApproval: false
+            },
+            { 
+              id: '2', 
+              name: 'Diseño de Base de Datos', 
+              date: '2025-03-15', 
+              description: 'Modelo de datos final', 
+              completed: true, 
+              approved: false,
+              createdBy: '3',
+              approvedBy: null,
+              needsApproval: true
+            }
+          ],
+          monthlyBudget: [
+            { id: '1', month: 'Enero 2025', planned: 15000, executed: 14500, createdBy: '3', approvedBy: '2', needsApproval: false },
+            { id: '2', month: 'Febrero 2025', planned: 20000, executed: 18200, createdBy: '3', approvedBy: null, needsApproval: true }
+          ],
+          overallProgress: 45
+        }
+      ];
+
+      setUsers(initialUsers);
+      setProjects(mockProjects);
+    }
+  }, [users.length]); // Dependencia para evitar recrear datos
 
   // Definición de permisos por rol
   const permissions = {
@@ -193,12 +194,13 @@ const ProjectTrackerApp = () => {
       createdBy: currentUser.id
     };
 
-    setUsers([...users, newUser]);
+    // CORRECCIÓN: Usar función callback para asegurar el estado más reciente
+    setUsers(prevUsers => [...prevUsers, newUser]);
     return true;
   };
 
   const updateUser = (userId, userData) => {
-    setUsers(users.map(user => 
+    setUsers(prevUsers => prevUsers.map(user => 
       user.id === userId ? { ...user, ...userData } : user
     ));
   };
@@ -209,8 +211,8 @@ const ProjectTrackerApp = () => {
       return;
     }
     
-    if (window.confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
-      setUsers(users.map(user => 
+    if (confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
+      setUsers(prevUsers => prevUsers.map(user => 
         user.id === userId ? { ...user, status: 'inactivo' } : user
       ));
     }
@@ -329,18 +331,6 @@ const ProjectTrackerApp = () => {
               Iniciar Sesión
             </button>
           </form>
-
-          {/* Solo mostrar usuarios de prueba para el administrador después del login */}
-          {currentUser?.role === 'administrador' && (
-            <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600 mb-2 font-medium">Usuarios de prueba:</p>
-              <div className="space-y-1 text-xs text-gray-500">
-                <p><strong>Administrador:</strong> admin / admin123</p>
-                <p><strong>Gestor Seguimiento:</strong> gestor1 / gestor123</p>
-                <p><strong>Project Manager:</strong> pm1 / pm123</p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     );
@@ -410,6 +400,7 @@ const ProjectTrackerApp = () => {
                 onClick={() => {
                   setCurrentUser(null);
                   setCurrentView('login');
+                  setSelectedProject(null);
                 }}
                 className="text-gray-500 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
                 title="Cerrar Sesión"
@@ -452,6 +443,7 @@ const ProjectTrackerApp = () => {
       if (createUser(formData)) {
         setShowCreateUser(false);
         setFormData({ username: '', password: '', name: '', email: '', role: 'project_manager' });
+        setError('');
       }
     };
 
@@ -562,124 +554,6 @@ const ProjectTrackerApp = () => {
     );
   };
 
-  // Componente: Editar Usuario
-  const EditUserModal = () => {
-    const [formData, setFormData] = useState({
-      username: editingUser?.username || '',
-      name: editingUser?.name || '',
-      email: editingUser?.email || '',
-      role: editingUser?.role || 'project_manager'
-    });
-    const [error, setError] = useState('');
-
-    const handleSubmit = (e) => {
-      e.preventDefault();
-      setError('');
-
-      // Validaciones
-      if (users.some(u => u.username === formData.username && u.status === 'activo' && u.id !== editingUser.id)) {
-        setError('El nombre de usuario ya existe');
-        return;
-      }
-
-      if (users.some(u => u.email === formData.email && u.status === 'activo' && u.id !== editingUser.id)) {
-        setError('El email ya está registrado');
-        return;
-      }
-
-      updateUser(editingUser.id, formData);
-      setShowEditUser(false);
-      setEditingUser(null);
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-800">Editar Usuario</h2>
-          </div>
-          
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nombre Completo</label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Nombre completo del usuario"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="email@empresa.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Usuario</label>
-              <input
-                type="text"
-                required
-                value={formData.username}
-                onChange={(e) => setFormData({...formData, username: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Nombre de usuario"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Rol</label>
-              <select
-                value={formData.role}
-                onChange={(e) => setFormData({...formData, role: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="project_manager">Project Manager</option>
-                <option value="gestor_seguimiento">Gestor de Seguimiento</option>
-                <option value="administrador">Administrador</option>
-              </select>
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
-            <div className="flex gap-4 pt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowEditUser(false);
-                  setEditingUser(null);
-                  setError('');
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Actualizar
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  };
-
   // Componente: Gestión de Usuarios
   const UsersManagement = () => {
     const activeUsers = users.filter(u => u.status === 'activo');
@@ -701,11 +575,6 @@ const ProjectTrackerApp = () => {
         project_manager: 'bg-green-100 text-green-800'
       };
       return colors[role] || 'bg-gray-100 text-gray-800';
-    };
-
-    const handleEditUser = (user) => {
-      setEditingUser(user);
-      setShowEditUser(true);
     };
 
     return (
@@ -832,15 +701,13 @@ const ProjectTrackerApp = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center gap-2">
-                          {hasPermission('canEditUsers') && (
-                            <button
-                              onClick={() => handleEditUser(user)}
-                              className="text-blue-600 hover:text-blue-800 p-1 rounded"
-                              title="Editar usuario"
-                            >
-                              <Edit size={16} />
-                            </button>
-                          )}
+                          <button
+                            onClick={() => alert('Funcionalidad de edición en desarrollo')}
+                            className="text-blue-600 hover:text-blue-800 p-1 rounded"
+                            title="Editar usuario"
+                          >
+                            <Edit size={16} />
+                          </button>
                           {user.id !== currentUser.id && hasPermission('canDeleteUsers') && (
                             <button
                               onClick={() => deleteUser(user.id)}
@@ -895,65 +762,67 @@ const ProjectTrackerApp = () => {
       });
     });
 
-    const approveItem = (type, projectId, itemId) => {
-      const updatedProjects = projects.map(project => {
-        if (project.id === projectId) {
-          const updatedProject = { ...project };
-          
-          if (type === 'project') {
-            updatedProject.needsApproval = false;
-            updatedProject.approvedBy = currentUser.id;
-            updatedProject.status = 'en_progreso';
-          } else if (type === 'milestone') {
-            updatedProject.milestones = updatedProject.milestones.map(milestone => 
-              milestone.id === itemId 
-                ? { ...milestone, needsApproval: false, approved: true, approvedBy: currentUser.id }
-                : milestone
-            );
-          } else if (type === 'budget') {
-            updatedProject.monthlyBudget = updatedProject.monthlyBudget.map(budget => 
-              budget.id === itemId 
-                ? { ...budget, needsApproval: false, approvedBy: currentUser.id }
-                : budget
-            );
+    const approveItem = (type, projectId, itemId = null) => {
+      // CORRECCIÓN: Usar función callback para asegurar el estado más reciente
+      setProjects(prevProjects => {
+        return prevProjects.map(project => {
+          if (project.id === projectId) {
+            const updatedProject = { ...project };
+            
+            if (type === 'project') {
+              updatedProject.needsApproval = false;
+              updatedProject.approvedBy = currentUser.id;
+              updatedProject.status = 'en_progreso';
+            } else if (type === 'milestone') {
+              updatedProject.milestones = updatedProject.milestones.map(milestone => 
+                milestone.id === itemId 
+                  ? { ...milestone, needsApproval: false, approved: true, approvedBy: currentUser.id }
+                  : milestone
+              );
+            } else if (type === 'budget') {
+              updatedProject.monthlyBudget = updatedProject.monthlyBudget.map(budget => 
+                budget.id === itemId 
+                  ? { ...budget, needsApproval: false, approvedBy: currentUser.id }
+                  : budget
+              );
+            }
+            
+            return updatedProject;
           }
-          
-          return updatedProject;
-        }
-        return project;
+          return project;
+        });
       });
-      
-      setProjects(updatedProjects);
     };
 
-    const rejectItem = (type, projectId, itemId) => {
-      const updatedProjects = projects.map(project => {
-        if (project.id === projectId) {
-          const updatedProject = { ...project };
-          
-          if (type === 'project') {
-            updatedProject.needsApproval = false;
-            updatedProject.status = 'rechazado';
-          } else if (type === 'milestone') {
-            updatedProject.milestones = updatedProject.milestones.map(milestone => 
-              milestone.id === itemId 
-                ? { ...milestone, needsApproval: false, approved: false }
-                : milestone
-            );
-          } else if (type === 'budget') {
-            updatedProject.monthlyBudget = updatedProject.monthlyBudget.map(budget => 
-              budget.id === itemId 
-                ? { ...budget, needsApproval: false }
-                : budget
-            );
+    const rejectItem = (type, projectId, itemId = null) => {
+      // CORRECCIÓN: Usar función callback para asegurar el estado más reciente
+      setProjects(prevProjects => {
+        return prevProjects.map(project => {
+          if (project.id === projectId) {
+            const updatedProject = { ...project };
+            
+            if (type === 'project') {
+              updatedProject.needsApproval = false;
+              updatedProject.status = 'rechazado';
+            } else if (type === 'milestone') {
+              updatedProject.milestones = updatedProject.milestones.map(milestone => 
+                milestone.id === itemId 
+                  ? { ...milestone, needsApproval: false, approved: false }
+                  : milestone
+              );
+            } else if (type === 'budget') {
+              updatedProject.monthlyBudget = updatedProject.monthlyBudget.map(budget => 
+                budget.id === itemId 
+                  ? { ...budget, needsApproval: false }
+                  : budget
+              );
+            }
+            
+            return updatedProject;
           }
-          
-          return updatedProject;
-        }
-        return project;
+          return project;
+        });
       });
-      
-      setProjects(updatedProjects);
     };
 
     return (
@@ -1311,13 +1180,14 @@ const ProjectTrackerApp = () => {
         status: 'planificacion',
         createdAt: new Date().toISOString(),
         createdBy: currentUser.id,
-        needsApproval: currentUser.role === 'project_manager',
+        needsApproval: currentUser.role === 'project_manager', // PM necesita aprobación
         milestones: [],
         monthlyBudget: [],
         overallProgress: 0
       };
       
-      setProjects([...projects, newProject]);
+      // CORRECCIÓN: Usar función callback para asegurar el estado más reciente
+      setProjects(prevProjects => [...prevProjects, newProject]);
       setShowCreateProject(false);
       setSelectedProject(newProject);
       setCurrentView('project');
@@ -1435,16 +1305,13 @@ const ProjectTrackerApp = () => {
     );
   };
 
-  // Componente: Vista de Proyecto Individual
+  // Componente: Vista de Proyecto Individual (Simplificada)
   const ProjectView = () => {
-    const [activeTab, setActiveTab] = useState('overview');
-
     if (!selectedProject) return null;
 
     return (
       <div className="p-6 bg-gray-50 min-h-screen">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <div>
               <button
@@ -1469,617 +1336,181 @@ const ProjectTrackerApp = () => {
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="bg-white rounded-lg shadow-lg mb-6">
-            <div className="border-b border-gray-200">
-              <nav className="flex">
-                {[
-                  { id: 'overview', name: 'Resumen', icon: BarChart3 },
-                  { id: 'milestones', name: 'Hitos', icon: CheckCircle },
-                  { id: 'budget', name: 'Presupuesto', icon: DollarSign },
-                  { id: 'reports', name: 'Reportes', icon: FileText }
-                ].map(tab => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-6 py-4 font-medium ${
-                      activeTab === tab.id
-                        ? 'border-b-2 border-blue-500 text-blue-600'
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    <tab.icon size={20} />
-                    {tab.name}
-                  </button>
-                ))}
-              </nav>
+          {/* Información del Proyecto */}
+          <div className="bg-white rounded-xl shadow-lg mb-6">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-800">Información del Proyecto</h2>
             </div>
-
             <div className="p-6">
-              {/* Tab: Resumen */}
-              {activeTab === 'overview' && (
-                <OverviewTab project={selectedProject} />
-              )}
-
-              {/* Tab: Hitos */}
-              {activeTab === 'milestones' && (
-                <MilestonesTab 
-                  project={selectedProject} 
-                  onUpdate={(updatedProject) => {
-                    const updatedProjects = projects.map(p => p.id === updatedProject.id ? updatedProject : p);
-                    setProjects(updatedProjects);
-                    setSelectedProject(updatedProject);
-                  }}
-                />
-              )}
-
-              {/* Tab: Presupuesto */}
-              {activeTab === 'budget' && (
-                <BudgetTab 
-                  project={selectedProject} 
-                  onUpdate={(updatedProject) => {
-                    const updatedProjects = projects.map(p => p.id === updatedProject.id ? updatedProject : p);
-                    setProjects(updatedProjects);
-                    setSelectedProject(updatedProject);
-                  }}
-                />
-              )}
-
-              {/* Tab: Reportes */}
-              {activeTab === 'reports' && (
-                <ReportsTab project={selectedProject} />
-              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-medium text-gray-700 mb-2">Descripción</h3>
+                  <p className="text-gray-600">{selectedProject.charter?.description}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-700 mb-2">Objetivos</h3>
+                  <p className="text-gray-600">{selectedProject.charter?.objectives}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-700 mb-2">Alcance</h3>
+                  <p className="text-gray-600">{selectedProject.charter?.scope}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-700 mb-2">Duración y Fechas</h3>
+                  <p className="text-gray-600">{selectedProject.charter?.duration} días</p>
+                  <p className="text-sm text-gray-500">
+                    {selectedProject.charter?.startDate} - {selectedProject.charter?.endDate}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-    );
-  };
 
-  // Componente: Tab de Resumen
-  const OverviewTab = ({ project }) => {
-    const { milestoneProgress, budgetProgress, timeProgress } = calculateProgressMetrics(project);
-    
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-blue-50 p-6 rounded-lg">
-            <h3 className="font-semibold text-blue-800 mb-2">Progreso de Hitos</h3>
-            <p className="text-2xl font-bold text-blue-600">{milestoneProgress}%</p>
-          </div>
-          <div className="bg-green-50 p-6 rounded-lg">
-            <h3 className="font-semibold text-green-800 mb-2">Progreso Presupuestal</h3>
-            <p className="text-2xl font-bold text-green-600">{budgetProgress}%</p>
-          </div>
-          <div className="bg-purple-50 p-6 rounded-lg">
-            <h3 className="font-semibold text-purple-800 mb-2">Progreso Temporal</h3>
-            <p className="text-2xl font-bold text-purple-600">{timeProgress}%</p>
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4">Acta de Constitución</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-medium text-gray-700 mb-2">Descripción</h4>
-              <p className="text-gray-600">{project.charter?.description}</p>
-            </div>
-            <div>
-              <h4 className="font-medium text-gray-700 mb-2">Objetivos</h4>
-              <p className="text-gray-600">{project.charter?.objectives}</p>
-            </div>
-            <div>
-              <h4 className="font-medium text-gray-700 mb-2">Alcance</h4>
-              <p className="text-gray-600">{project.charter?.scope}</p>
-            </div>
-            <div>
-              <h4 className="font-medium text-gray-700 mb-2">Duración</h4>
-              <p className="text-gray-600">{project.charter?.duration} días</p>
-              <p className="text-sm text-gray-500">
-                {project.charter?.startDate} - {project.charter?.endDate}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Componente: Tab de Hitos
-  const MilestonesTab = ({ project, onUpdate }) => {
-    const [showForm, setShowForm] = useState(false);
-    const [formData, setFormData] = useState({ name: '', date: '', description: '' });
-
-    const handleSubmit = (e) => {
-      e.preventDefault();
-      const updatedProject = { ...project };
-      
-      if (!updatedProject.milestones) updatedProject.milestones = [];
-      
-      const newMilestone = {
-        id: Date.now().toString(),
-        ...formData,
-        completed: false,
-        approved: false,
-        createdBy: currentUser.id,
-        needsApproval: currentUser.role === 'project_manager',
-        createdAt: new Date().toISOString()
-      };
-      updatedProject.milestones.push(newMilestone);
-      
-      onUpdate(updatedProject);
-      setShowForm(false);
-      setFormData({ name: '', date: '', description: '' });
-    };
-
-    const toggleMilestone = (milestoneId, field) => {
-      const updatedProject = { ...project };
-      const milestone = updatedProject.milestones.find(m => m.id === milestoneId);
-      if (milestone) {
-        if (field === 'completed') {
-          milestone[field] = !milestone[field];
-          if (milestone.completed && currentUser.role === 'project_manager') {
-            milestone.needsApproval = true;
-          }
-        } else {
-          milestone[field] = !milestone[field];
-        }
-        onUpdate(updatedProject);
-      }
-    };
-
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold">Gestión de Hitos</h3>
-          {hasPermission('canAddActivities') && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-            >
-              <Plus size={16} />
-              Agregar Hito
-            </button>
-          )}
-        </div>
-
-        {project.milestones && project.milestones.length > 0 ? (
-          <div className="space-y-4">
-            {project.milestones.map(milestone => (
-              <div key={milestone.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-800">{milestone.name}</h4>
-                    <p className="text-sm text-gray-600 mb-2">{milestone.description}</p>
-                    <p className="text-sm text-gray-500">Fecha: {milestone.date}</p>
-                    {milestone.needsApproval && (
-                      <span className="inline-block mt-2 px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
-                        Pendiente Aprobación
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4">
-                    {(hasPermission('canAddActivities') || milestone.createdBy === currentUser.id) && (
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={milestone.completed}
-                          onChange={() => toggleMilestone(milestone.id, 'completed')}
-                          className="rounded border-gray-300"
-                        />
-                        <span className="text-sm">Completado</span>
-                      </label>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <span className={`text-sm px-2 py-1 rounded-full ${
-                        milestone.approved ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {milestone.approved ? 'Aprobado' : 'No Aprobado'}
-                      </span>
+          {/* Métricas de Progreso */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            {(() => {
+              const { milestoneProgress, budgetProgress, timeProgress } = calculateProgressMetrics(selectedProject);
+              
+              return [
+                {
+                  title: 'Progreso de Hitos',
+                  progress: milestoneProgress,
+                  color: 'bg-blue-50',
+                  textColor: 'text-blue-800'
+                },
+                {
+                  title: 'Progreso Presupuestal',
+                  progress: budgetProgress,
+                  color: 'bg-green-50',
+                  textColor: 'text-green-800'
+                },
+                {
+                  title: 'Progreso Temporal',
+                  progress: timeProgress,
+                  color: 'bg-purple-50',
+                  textColor: 'text-purple-800'
+                }
+              ].map((metric, index) => (
+                <div key={index} className={`${metric.color} p-6 rounded-lg`}>
+                  <h3 className={`font-semibold ${metric.textColor} mb-2`}>{metric.title}</h3>
+                  <p className={`text-2xl font-bold ${metric.textColor}`}>{metric.progress}%</p>
+                  <div className="mt-3">
+                    <div className="w-full bg-white bg-opacity-70 rounded-full h-2">
+                      <div 
+                        className="bg-current h-2 rounded-full transition-all duration-500"
+                        style={{width: `${metric.progress}%`}}
+                      ></div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            <CheckCircle size={48} className="mx-auto mb-4 text-gray-300" />
-            <p>No hay hitos definidos para este proyecto</p>
-          </div>
-        )}
 
-        {/* Formulario de Hito */}
-        {showForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-2xl max-w-md w-full">
+          {/* Hitos del Proyecto */}
+          {selectedProject.milestones && selectedProject.milestones.length > 0 && (
+            <div className="bg-white rounded-xl shadow-lg mb-6">
               <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold">Nuevo Hito</h3>
+                <h2 className="text-xl font-semibold text-gray-800">Hitos del Proyecto</h2>
               </div>
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="Nombre del hito"
-                  />
+              <div className="p-6">
+                <div className="space-y-4">
+                  {selectedProject.milestones.map(milestone => (
+                    <div key={milestone.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-800">{milestone.name}</h4>
+                          <p className="text-sm text-gray-600 mb-2">{milestone.description}</p>
+                          <p className="text-sm text-gray-500">Fecha: {milestone.date}</p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            milestone.completed && milestone.approved ? 'bg-green-100 text-green-800' :
+                            milestone.completed ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {milestone.completed && milestone.approved ? 'Completado' :
+                             milestone.completed ? 'Pendiente Aprobación' : 'Pendiente'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.date}
-                    onChange={(e) => setFormData({...formData, date: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    rows="3"
-                    placeholder="Descripción del hito"
-                  />
-                </div>
-                <div className="flex gap-4 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowForm(false);
-                      setFormData({ name: '', date: '', description: '' });
-                    }}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Crear
-                  </button>
-                </div>
-              </form>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Componente: Tab de Presupuesto
-  const BudgetTab = ({ project, onUpdate }) => {
-    const [showForm, setShowForm] = useState(false);
-    const [formData, setFormData] = useState({ month: '', planned: '', executed: '' });
-
-    const handleSubmit = (e) => {
-      e.preventDefault();
-      const updatedProject = { ...project };
-      
-      if (!updatedProject.monthlyBudget) updatedProject.monthlyBudget = [];
-      
-      const newBudgetEntry = {
-        id: Date.now().toString(),
-        month: formData.month,
-        planned: parseFloat(formData.planned) || 0,
-        executed: parseFloat(formData.executed) || 0,
-        createdBy: currentUser.id,
-        needsApproval: currentUser.role === 'project_manager',
-        createdAt: new Date().toISOString()
-      };
-      
-      updatedProject.monthlyBudget.push(newBudgetEntry);
-      onUpdate(updatedProject);
-      setShowForm(false);
-      setFormData({ month: '', planned: '', executed: '' });
-    };
-
-    const updateBudgetEntry = (entryId, field, value) => {
-      const updatedProject = { ...project };
-      const entry = updatedProject.monthlyBudget.find(e => e.id === entryId);
-      if (entry && (hasPermission('canAddBudgets') || entry.createdBy === currentUser.id)) {
-        entry[field] = parseFloat(value) || 0;
-        if (currentUser.role === 'project_manager') {
-          entry.needsApproval = true;
-        }
-        onUpdate(updatedProject);
-      }
-    };
-
-    const totalPlanned = project.monthlyBudget?.reduce((acc, entry) => acc + (entry.planned || 0), 0) || 0;
-    const totalExecuted = project.monthlyBudget?.reduce((acc, entry) => acc + (entry.executed || 0), 0) || 0;
-
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold">Gestión de Presupuesto</h3>
-          {hasPermission('canAddBudgets') && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-            >
-              <Plus size={16} />
-              Agregar Mes
-            </button>
           )}
-        </div>
 
-        {/* Resumen Presupuestal */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-blue-800">Presupuesto Planificado</h4>
-            <p className="text-2xl font-bold text-blue-600">${totalPlanned.toLocaleString()}</p>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-green-800">Presupuesto Ejecutado</h4>
-            <p className="text-2xl font-bold text-green-600">${totalExecuted.toLocaleString()}</p>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-purple-800">Variación</h4>
-            <p className={`text-2xl font-bold ${totalExecuted > totalPlanned ? 'text-red-600' : 'text-green-600'}`}>
-              ${(totalExecuted - totalPlanned).toLocaleString()}
-            </p>
-          </div>
-        </div>
-
-        {/* Tabla de Presupuesto */}
-        {project.monthlyBudget && project.monthlyBudget.length > 0 ? (
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mes</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Planificado</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ejecutado</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variación</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">% Ejecución</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {project.monthlyBudget.map(entry => (
-                  <tr key={entry.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{entry.month}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <input
-                        type="number"
-                        value={entry.planned || ''}
-                        onChange={(e) => updateBudgetEntry(entry.id, 'planned', e.target.value)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        placeholder="0"
-                        disabled={!hasPermission('canAddBudgets') && entry.createdBy !== currentUser.id}
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <input
-                        type="number"
-                        value={entry.executed || ''}
-                        onChange={(e) => updateBudgetEntry(entry.id, 'executed', e.target.value)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        placeholder="0"
-                        disabled={!hasPermission('canAddBudgets') && entry.createdBy !== currentUser.id}
-                      />
-                    </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                      (entry.executed || 0) > (entry.planned || 0) ? 'text-red-600' : 'text-green-600'
-                    }`}>
-                      ${((entry.executed || 0) - (entry.planned || 0)).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {entry.planned > 0 ? Math.round((entry.executed / entry.planned) * 100) : 0}%
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {entry.needsApproval ? (
-                        <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800">
-                          Pendiente
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                          Aprobado
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            <DollarSign size={48} className="mx-auto mb-4 text-gray-300" />
-            <p>No hay datos presupuestales para este proyecto</p>
-          </div>
-        )}
-
-        {/* Formulario de Presupuesto */}
-        {showForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-2xl max-w-md w-full">
+          {/* Presupuesto del Proyecto */}
+          {selectedProject.monthlyBudget && selectedProject.monthlyBudget.length > 0 && (
+            <div className="bg-white rounded-xl shadow-lg mb-6">
               <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold">Agregar Mes al Presupuesto</h3>
+                <h2 className="text-xl font-semibold text-gray-800">Presupuesto del Proyecto</h2>
               </div>
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Mes</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.month}
-                    onChange={(e) => setFormData({...formData, month: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enero 2025"
-                  />
+              <div className="p-6">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mes</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Planificado</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ejecutado</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Variación</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {selectedProject.monthlyBudget.map(budget => (
+                        <tr key={budget.id}>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">{budget.month}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">${budget.planned?.toLocaleString()}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">${budget.executed?.toLocaleString()}</td>
+                          <td className={`px-4 py-3 text-sm font-medium ${
+                            (budget.executed || 0) > (budget.planned || 0) ? 'text-red-600' : 'text-green-600'
+                          }`}>
+                            ${((budget.executed || 0) - (budget.planned || 0)).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Presupuesto Planificado</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={formData.planned}
-                    onChange={(e) => setFormData({...formData, planned: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Presupuesto Ejecutado</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.executed}
-                    onChange={(e) => setFormData({...formData, executed: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.00"
-                  />
-                </div>
-                <div className="flex gap-4 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowForm(false);
-                      setFormData({ month: '', planned: '', executed: '' });
-                    }}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                  >
-                    Agregar
-                  </button>
-                </div>
-              </form>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-    );
-  };
+          )}
 
-  // Componente: Tab de Reportes
-  const ReportsTab = ({ project }) => {
-    const { milestoneProgress, budgetProgress, timeProgress } = calculateProgressMetrics(project);
-    
-    return (
-      <div className="space-y-8">
-        {/* Curva S */}
-        <div>
-          <h3 className="text-lg font-semibold mb-4">Curva S - Progreso del Proyecto</h3>
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <ResponsiveContainer width="100%" height={400}>
-              <LineChart data={generateSCurveData(project)}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="planificado" 
-                  stroke="#3B82F6" 
-                  strokeWidth={3}
-                  name="Planificado"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="ejecutado" 
-                  stroke="#10B981" 
-                  strokeWidth={3}
-                  name="Ejecutado"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Gráficos de Progreso */}
-        <div>
-          <h3 className="text-lg font-semibold mb-6">Indicadores de Avance</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                title: 'Avance de Hitos',
-                progress: milestoneProgress,
-                icon: CheckCircle,
-                color: 'bg-green-500',
-                bgColor: 'bg-green-50',
-                iconColor: 'text-green-600'
-              },
-              {
-                title: 'Avance Presupuestal',
-                progress: budgetProgress,
-                icon: DollarSign,
-                color: 'bg-blue-500',
-                bgColor: 'bg-blue-50',
-                iconColor: 'text-blue-600'
-              },
-              {
-                title: 'Avance Temporal',
-                progress: timeProgress,
-                icon: Clock,
-                color: 'bg-purple-500',
-                bgColor: 'bg-purple-50',
-                iconColor: 'text-purple-600'
-              }
-            ].map((metric, index) => (
-              <div key={index} className={`${metric.bgColor} rounded-xl p-6 shadow-lg border border-gray-100`}>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`p-3 rounded-lg bg-white shadow-sm`}>
-                    <metric.icon className={metric.iconColor} size={24} />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-800">{metric.title}</h4>
-                    <p className="text-2xl font-bold text-gray-800">{metric.progress}%</p>
-                  </div>
-                </div>
-                
-                {/* Barra de Progreso */}
-                <div className="relative">
-                  <div className="w-full bg-white bg-opacity-70 rounded-full h-6 shadow-inner">
-                    <div 
-                      className={`${metric.color} h-6 rounded-full transition-all duration-1000 ease-out flex items-center justify-end pr-2`}
-                      style={{width: `${metric.progress}%`}}
-                    >
-                      {metric.progress > 10 && (
-                        <span className="text-white text-xs font-bold">
-                          {metric.progress}%
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {metric.progress <= 10 && (
-                    <div className="absolute -top-8 text-xs font-bold text-gray-700" style={{left: `${Math.max(metric.progress, 5)}%`}}>
-                      {metric.progress}%
-                    </div>
-                  )}
-                </div>
-                
-                {/* Indicador de estado */}
-                <div className="mt-3">
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>0%</span>
-                    <span className="font-medium">
-                      {metric.progress >= 90 ? 'Casi Completo' : 
-                       metric.progress >= 70 ? 'Buen Avance' :
-                       metric.progress >= 50 ? 'En Progreso' :
-                       metric.progress >= 25 ? 'Inicio' : 'Planificación'}
-                    </span>
-                    <span>100%</span>
-                  </div>
-                </div>
+          {/* Curva S */}
+          {selectedProject.monthlyBudget && selectedProject.monthlyBudget.length > 0 && (
+            <div className="bg-white rounded-xl shadow-lg">
+              <div className="p-6 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-800">Curva S - Progreso del Proyecto</h2>
               </div>
-            ))}
-          </div>
+              <div className="p-6">
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={generateSCurveData(selectedProject)}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="planificado" 
+                      stroke="#3B82F6" 
+                      strokeWidth={3}
+                      name="Planificado"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="ejecutado" 
+                      stroke="#10B981" 
+                      strokeWidth={3}
+                      name="Ejecutado"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -2094,12 +1525,11 @@ const ProjectTrackerApp = () => {
     <div className="min-h-screen bg-gray-100">
       <NavigationHeader />
       {currentView === 'dashboard' && <Dashboard />}
-      {currentView === 'users' && <UsersManagement />}
-      {currentView === 'approvals' && <ApprovalsCenter />}
+      {currentView === 'users' && hasPermission('canManageUsers') && <UsersManagement />}
+      {currentView === 'approvals' && (hasPermission('canApproveProjects') || hasPermission('canApproveMilestones') || hasPermission('canApproveBudgets')) && <ApprovalsCenter />}
       {currentView === 'project' && <ProjectView />}
       {showCreateProject && <CreateProject />}
       {showCreateUser && <CreateUserModal />}
-      {showEditUser && <EditUserModal />}
     </div>
   );
 };
