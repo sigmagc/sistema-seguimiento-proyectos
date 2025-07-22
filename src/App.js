@@ -10,10 +10,10 @@ const ProjectTrackerApp = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [showCreateUser, setShowCreateUser] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
 
   // Datos iniciales
   useEffect(() => {
-    // Solo cargar datos iniciales si no existen usuarios
     if (users.length === 0) {
       const initialUsers = [
         {
@@ -102,9 +102,8 @@ const ProjectTrackerApp = () => {
       setUsers(initialUsers);
       setProjects(mockProjects);
     }
-  }, [users.length]); // Dependencia para evitar recrear datos
+  }, [users.length]);
 
-  // Definición de permisos por rol
   const permissions = {
     administrador: {
       canCreateUsers: true,
@@ -116,6 +115,7 @@ const ProjectTrackerApp = () => {
       canApproveBudgets: true,
       canCreateProjects: true,
       canEditProjects: true,
+      canDeleteProjects: true,
       canAddActivities: true,
       canAddBudgets: true,
       canViewAllProjects: true,
@@ -131,6 +131,7 @@ const ProjectTrackerApp = () => {
       canApproveBudgets: true,
       canCreateProjects: false,
       canEditProjects: false,
+      canDeleteProjects: false,
       canAddActivities: false,
       canAddBudgets: false,
       canViewAllProjects: true,
@@ -146,6 +147,7 @@ const ProjectTrackerApp = () => {
       canApproveBudgets: false,
       canCreateProjects: true,
       canEditProjects: true,
+      canDeleteProjects: true,
       canAddActivities: true,
       canAddBudgets: true,
       canViewAllProjects: false,
@@ -158,7 +160,6 @@ const ProjectTrackerApp = () => {
     return permissions[currentUser.role]?.[permission] || false;
   };
 
-  // Función para contar aprobaciones pendientes
   const getPendingApprovalsCount = () => {
     let count = 0;
     projects.forEach(project => {
@@ -175,9 +176,7 @@ const ProjectTrackerApp = () => {
     return count;
   };
 
-  // Funciones de gestión de usuarios
   const createUser = (userData) => {
-    // Validar límite de Project Managers
     if (userData.role === 'project_manager') {
       const pmCount = users.filter(u => u.role === 'project_manager' && u.status === 'activo').length;
       if (pmCount >= 4) {
@@ -194,7 +193,6 @@ const ProjectTrackerApp = () => {
       createdBy: currentUser.id
     };
 
-    // CORRECCIÓN: Usar función callback para asegurar el estado más reciente
     setUsers(prevUsers => [...prevUsers, newUser]);
     return true;
   };
@@ -211,14 +209,32 @@ const ProjectTrackerApp = () => {
       return;
     }
     
-    if (confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
       setUsers(prevUsers => prevUsers.map(user => 
         user.id === userId ? { ...user, status: 'inactivo' } : user
       ));
     }
   };
 
-  // Funciones auxiliares para cálculos
+  const deleteProject = (projectId) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    if (!hasPermission('canDeleteProjects') && project.createdBy !== currentUser.id) {
+      alert('No tienes permisos para eliminar este proyecto');
+      return;
+    }
+
+    if (window.confirm(`¿Estás seguro de que deseas eliminar el proyecto "${project.name}"? Esta acción no se puede deshacer.`)) {
+      setProjects(prevProjects => prevProjects.filter(p => p.id !== projectId));
+      
+      if (selectedProject && selectedProject.id === projectId) {
+        setSelectedProject(null);
+        setCurrentView('dashboard');
+      }
+    }
+  };
+
   const calculateProgressMetrics = (project) => {
     const milestoneProgress = project.milestones?.length > 0 
       ? Math.round((project.milestones.filter(m => m.completed && m.approved).length / project.milestones.length) * 100)
@@ -260,7 +276,6 @@ const ProjectTrackerApp = () => {
     });
   };
 
-  // Componente: Login
   const LoginComponent = () => {
     const [credentials, setCredentials] = useState({ username: '', password: '' });
     const [error, setError] = useState('');
@@ -336,7 +351,6 @@ const ProjectTrackerApp = () => {
     );
   };
 
-  // Componente: Header de navegación
   const NavigationHeader = () => (
     <div className="bg-white shadow-lg border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-6 py-4">
@@ -414,7 +428,6 @@ const ProjectTrackerApp = () => {
     </div>
   );
 
-  // Componente: Crear Usuario
   const CreateUserModal = () => {
     const [formData, setFormData] = useState({
       username: '',
@@ -429,7 +442,6 @@ const ProjectTrackerApp = () => {
       e.preventDefault();
       setError('');
 
-      // Validaciones
       if (users.some(u => u.username === formData.username && u.status === 'activo')) {
         setError('El nombre de usuario ya existe');
         return;
@@ -444,6 +456,7 @@ const ProjectTrackerApp = () => {
         setShowCreateUser(false);
         setFormData({ username: '', password: '', name: '', email: '', role: 'project_manager' });
         setError('');
+        alert(`Usuario "${formData.name}" creado exitosamente`);
       }
     };
 
@@ -554,7 +567,156 @@ const ProjectTrackerApp = () => {
     );
   };
 
-  // Componente: Gestión de Usuarios
+  const EditUserModal = () => {
+    const [formData, setFormData] = useState({
+      name: editingUser?.name || '',
+      email: editingUser?.email || '',
+      username: editingUser?.username || '',
+      password: editingUser?.password || '',
+      role: editingUser?.role || 'project_manager'
+    });
+    const [error, setError] = useState('');
+
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      setError('');
+
+      const existingUser = users.find(u => u.username === formData.username && u.id !== editingUser.id && u.status === 'activo');
+      if (existingUser) {
+        setError('El nombre de usuario ya existe');
+        return;
+      }
+
+      const existingEmail = users.find(u => u.email === formData.email && u.id !== editingUser.id && u.status === 'activo');
+      if (existingEmail) {
+        setError('El email ya está registrado');
+        return;
+      }
+
+      if (formData.role === 'project_manager' && editingUser.role !== 'project_manager') {
+        const pmCount = users.filter(u => u.role === 'project_manager' && u.status === 'activo').length;
+        if (pmCount >= 4) {
+          setError('No se pueden tener más de 4 Project Managers');
+          return;
+        }
+      }
+
+      updateUser(editingUser.id, formData);
+      setEditingUser(null);
+      setError('');
+      alert(`Usuario "${formData.name}" actualizado exitosamente`);
+    };
+
+    const pmCount = users.filter(u => u.role === 'project_manager' && u.status === 'activo').length;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-xl font-bold text-gray-800">Editar Usuario</h2>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nombre Completo</label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="Nombre completo del usuario"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="email@empresa.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Usuario</label>
+              <input
+                type="text"
+                required
+                value={formData.username}
+                onChange={(e) => setFormData({...formData, username: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="Nombre de usuario"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Contraseña</label>
+              <input
+                type="password"
+                required
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="Contraseña"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Rol</label>
+              <select
+                value={formData.role}
+                onChange={(e) => setFormData({...formData, role: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                disabled={editingUser?.role === 'administrador'}
+              >
+                {editingUser?.role === 'administrador' && (
+                  <option value="administrador">Administrador</option>
+                )}
+                <option value="project_manager">Project Manager</option>
+                <option value="gestor_seguimiento">Gestor de Seguimiento</option>
+              </select>
+              {formData.role === 'project_manager' && editingUser.role !== 'project_manager' && pmCount >= 4 && (
+                <p className="text-xs text-red-600 mt-1">
+                  Ya existen 4 Project Managers activos (máximo permitido)
+                </p>
+              )}
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-4 pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingUser(null);
+                  setError('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={formData.role === 'project_manager' && editingUser.role !== 'project_manager' && pmCount >= 4}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                Guardar Cambios
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   const UsersManagement = () => {
     const activeUsers = users.filter(u => u.status === 'activo');
     const pmCount = activeUsers.filter(u => u.role === 'project_manager').length;
@@ -572,966 +734,3 @@ const ProjectTrackerApp = () => {
       const colors = {
         administrador: 'bg-red-100 text-red-800',
         gestor_seguimiento: 'bg-blue-100 text-blue-800',
-        project_manager: 'bg-green-100 text-green-800'
-      };
-      return colors[role] || 'bg-gray-100 text-gray-800';
-    };
-
-    return (
-      <div className="p-6 bg-gray-50 min-h-screen">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">Gestión de Usuarios</h1>
-              <p className="text-gray-600">Administrar usuarios del sistema</p>
-            </div>
-            {hasPermission('canCreateUsers') && (
-              <button
-                onClick={() => setShowCreateUser(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 shadow-lg transition-all"
-              >
-                <UserPlus size={20} />
-                Nuevo Usuario
-              </button>
-            )}
-          </div>
-
-          {/* Estadísticas de usuarios */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 p-3 rounded-lg">
-                  <Users className="text-blue-600" size={24} />
-                </div>
-                <div>
-                  <p className="text-gray-500 text-sm">Total Usuarios</p>
-                  <p className="text-2xl font-bold text-gray-800">{activeUsers.length}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="bg-red-100 p-3 rounded-lg">
-                  <Shield className="text-red-600" size={24} />
-                </div>
-                <div>
-                  <p className="text-gray-500 text-sm">Administradores</p>
-                  <p className="text-2xl font-bold text-gray-800">
-                    {activeUsers.filter(u => u.role === 'administrador').length}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 p-3 rounded-lg">
-                  <UserCheck className="text-blue-600" size={24} />
-                </div>
-                <div>
-                  <p className="text-gray-500 text-sm">Gestores</p>
-                  <p className="text-2xl font-bold text-gray-800">
-                    {activeUsers.filter(u => u.role === 'gestor_seguimiento').length}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="bg-green-100 p-3 rounded-lg">
-                  <Target className="text-green-600" size={24} />
-                </div>
-                <div>
-                  <p className="text-gray-500 text-sm">Project Managers</p>
-                  <p className="text-2xl font-bold text-gray-800">{pmCount}/4</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Tabla de usuarios */}
-          <div className="bg-white rounded-xl shadow-lg">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-800">Lista de Usuarios</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Creado</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {activeUsers.map(user => (
-                    <tr key={user.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-8 w-8">
-                            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                              <span className="text-sm font-medium text-blue-600">
-                                {user.name.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                            <div className="text-sm text-gray-500">{user.email}</div>
-                            <div className="text-xs text-gray-400">@{user.username}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getRoleBadgeColor(user.role)}`}>
-                          {getRoleDisplayName(user.role)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                          Activo
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => alert('Funcionalidad de edición en desarrollo')}
-                            className="text-blue-600 hover:text-blue-800 p-1 rounded"
-                            title="Editar usuario"
-                          >
-                            <Edit size={16} />
-                          </button>
-                          {user.id !== currentUser.id && hasPermission('canDeleteUsers') && (
-                            <button
-                              onClick={() => deleteUser(user.id)}
-                              className="text-red-600 hover:text-red-800 p-1 rounded"
-                              title="Eliminar usuario"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Componente: Centro de Aprobaciones
-  const ApprovalsCenter = () => {
-    const pendingProjects = projects.filter(p => p.needsApproval && hasPermission('canApproveProjects'));
-    const pendingMilestones = [];
-    const pendingBudgets = [];
-
-    // Recopilar hitos pendientes
-    projects.forEach(project => {
-      project.milestones?.forEach(milestone => {
-        if (milestone.needsApproval && hasPermission('canApproveMilestones')) {
-          pendingMilestones.push({
-            ...milestone,
-            projectName: project.name,
-            projectId: project.id
-          });
-        }
-      });
-    });
-
-    // Recopilar presupuestos pendientes
-    projects.forEach(project => {
-      project.monthlyBudget?.forEach(budget => {
-        if (budget.needsApproval && hasPermission('canApproveBudgets')) {
-          pendingBudgets.push({
-            ...budget,
-            projectName: project.name,
-            projectId: project.id
-          });
-        }
-      });
-    });
-
-    const approveItem = (type, projectId, itemId = null) => {
-      // CORRECCIÓN: Usar función callback para asegurar el estado más reciente
-      setProjects(prevProjects => {
-        return prevProjects.map(project => {
-          if (project.id === projectId) {
-            const updatedProject = { ...project };
-            
-            if (type === 'project') {
-              updatedProject.needsApproval = false;
-              updatedProject.approvedBy = currentUser.id;
-              updatedProject.status = 'en_progreso';
-            } else if (type === 'milestone') {
-              updatedProject.milestones = updatedProject.milestones.map(milestone => 
-                milestone.id === itemId 
-                  ? { ...milestone, needsApproval: false, approved: true, approvedBy: currentUser.id }
-                  : milestone
-              );
-            } else if (type === 'budget') {
-              updatedProject.monthlyBudget = updatedProject.monthlyBudget.map(budget => 
-                budget.id === itemId 
-                  ? { ...budget, needsApproval: false, approvedBy: currentUser.id }
-                  : budget
-              );
-            }
-            
-            return updatedProject;
-          }
-          return project;
-        });
-      });
-    };
-
-    const rejectItem = (type, projectId, itemId = null) => {
-      // CORRECCIÓN: Usar función callback para asegurar el estado más reciente
-      setProjects(prevProjects => {
-        return prevProjects.map(project => {
-          if (project.id === projectId) {
-            const updatedProject = { ...project };
-            
-            if (type === 'project') {
-              updatedProject.needsApproval = false;
-              updatedProject.status = 'rechazado';
-            } else if (type === 'milestone') {
-              updatedProject.milestones = updatedProject.milestones.map(milestone => 
-                milestone.id === itemId 
-                  ? { ...milestone, needsApproval: false, approved: false }
-                  : milestone
-              );
-            } else if (type === 'budget') {
-              updatedProject.monthlyBudget = updatedProject.monthlyBudget.map(budget => 
-                budget.id === itemId 
-                  ? { ...budget, needsApproval: false }
-                  : budget
-              );
-            }
-            
-            return updatedProject;
-          }
-          return project;
-        });
-      });
-    };
-
-    return (
-      <div className="p-6 bg-gray-50 min-h-screen">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Centro de Aprobaciones</h1>
-            <p className="text-gray-600">Gestionar aprobaciones pendientes</p>
-          </div>
-
-          {/* Estadísticas de aprobaciones */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 p-3 rounded-lg">
-                  <Target className="text-blue-600" size={24} />
-                </div>
-                <div>
-                  <p className="text-gray-500 text-sm">Proyectos Pendientes</p>
-                  <p className="text-2xl font-bold text-gray-800">{pendingProjects.length}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="bg-green-100 p-3 rounded-lg">
-                  <CheckCircle className="text-green-600" size={24} />
-                </div>
-                <div>
-                  <p className="text-gray-500 text-sm">Hitos Pendientes</p>
-                  <p className="text-2xl font-bold text-gray-800">{pendingMilestones.length}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="bg-purple-100 p-3 rounded-lg">
-                  <DollarSign className="text-purple-600" size={24} />
-                </div>
-                <div>
-                  <p className="text-gray-500 text-sm">Presupuestos Pendientes</p>
-                  <p className="text-2xl font-bold text-gray-800">{pendingBudgets.length}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Proyectos pendientes */}
-          {pendingProjects.length > 0 && (
-            <div className="bg-white rounded-xl shadow-lg mb-8">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800">Proyectos Pendientes de Aprobación</h2>
-              </div>
-              <div className="p-6 space-y-4">
-                {pendingProjects.map(project => (
-                  <div key={project.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="font-semibold text-lg text-gray-800">{project.name}</h3>
-                        <p className="text-gray-600 text-sm">{project.charter?.description}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Creado por: {users.find(u => u.id === project.createdBy)?.name}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => approveItem('project', project.id)}
-                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
-                        >
-                          Aprobar
-                        </button>
-                        <button
-                          onClick={() => rejectItem('project', project.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm"
-                        >
-                          Rechazar
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Hitos pendientes */}
-          {pendingMilestones.length > 0 && (
-            <div className="bg-white rounded-xl shadow-lg mb-8">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800">Hitos Pendientes de Aprobación</h2>
-              </div>
-              <div className="p-6 space-y-4">
-                {pendingMilestones.map(milestone => (
-                  <div key={`${milestone.projectId}-${milestone.id}`} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="font-semibold text-gray-800">{milestone.name}</h3>
-                        <p className="text-gray-600 text-sm">{milestone.description}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Proyecto: {milestone.projectName} | Fecha: {milestone.date}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => approveItem('milestone', milestone.projectId, milestone.id)}
-                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
-                        >
-                          Aprobar
-                        </button>
-                        <button
-                          onClick={() => rejectItem('milestone', milestone.projectId, milestone.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm"
-                        >
-                          Rechazar
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Presupuestos pendientes */}
-          {pendingBudgets.length > 0 && (
-            <div className="bg-white rounded-xl shadow-lg mb-8">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800">Presupuestos Pendientes de Aprobación</h2>
-              </div>
-              <div className="p-6 space-y-4">
-                {pendingBudgets.map(budget => (
-                  <div key={`${budget.projectId}-${budget.id}`} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="font-semibold text-gray-800">{budget.month}</h3>
-                        <p className="text-gray-600 text-sm">
-                          Planificado: ${budget.planned?.toLocaleString()} | 
-                          Ejecutado: ${budget.executed?.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Proyecto: {budget.projectName}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => approveItem('budget', budget.projectId, budget.id)}
-                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
-                        >
-                          Aprobar
-                        </button>
-                        <button
-                          onClick={() => rejectItem('budget', budget.projectId, budget.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm"
-                        >
-                          Rechazar
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Sin aprobaciones pendientes */}
-          {pendingProjects.length === 0 && pendingMilestones.length === 0 && pendingBudgets.length === 0 && (
-            <div className="bg-white rounded-xl shadow-lg">
-              <div className="p-12 text-center">
-                <CheckCircle size={48} className="text-green-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">No hay aprobaciones pendientes</h3>
-                <p className="text-gray-600">Todas las solicitudes han sido procesadas</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // Componente: Dashboard Principal
-  const Dashboard = () => {
-    const userProjects = hasPermission('canViewAllProjects') 
-      ? projects 
-      : projects.filter(p => p.createdBy === currentUser.id);
-
-    return (
-      <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-800 mb-2">Dashboard de Proyectos</h1>
-              <p className="text-gray-600">Panel de control y seguimiento integral</p>
-            </div>
-            {hasPermission('canCreateProjects') && (
-              <button
-                onClick={() => setShowCreateProject(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 shadow-lg transition-all"
-              >
-                <Plus size={20} />
-                Nuevo Proyecto
-              </button>
-            )}
-          </div>
-
-          {/* Estadísticas Generales */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 p-3 rounded-lg">
-                  <Target className="text-blue-600" size={24} />
-                </div>
-                <div>
-                  <p className="text-gray-500 text-sm">Total Proyectos</p>
-                  <p className="text-2xl font-bold text-gray-800">{userProjects.length}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="bg-green-100 p-3 rounded-lg">
-                  <CheckCircle className="text-green-600" size={24} />
-                </div>
-                <div>
-                  <p className="text-gray-500 text-sm">Completados</p>
-                  <p className="text-2xl font-bold text-gray-800">
-                    {userProjects.filter(p => p.status === 'completado').length}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="bg-yellow-100 p-3 rounded-lg">
-                  <Clock className="text-yellow-600" size={24} />
-                </div>
-                <div>
-                  <p className="text-gray-500 text-sm">En Progreso</p>
-                  <p className="text-2xl font-bold text-gray-800">
-                    {userProjects.filter(p => p.status === 'en_progreso').length}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="bg-purple-100 p-3 rounded-lg">
-                  <TrendingUp className="text-purple-600" size={24} />
-                </div>
-                <div>
-                  <p className="text-gray-500 text-sm">Promedio Avance</p>
-                  <p className="text-2xl font-bold text-gray-800">
-                    {userProjects.length > 0 ? Math.round(userProjects.reduce((acc, p) => acc + (p.overallProgress || 0), 0) / userProjects.length) : 0}%
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Lista de Proyectos */}
-          <div className="bg-white rounded-xl shadow-lg">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-800">
-                {hasPermission('canViewAllProjects') ? 'Todos los Proyectos' : 'Mis Proyectos'}
-              </h2>
-            </div>
-            <div className="p-6">
-              {userProjects.length === 0 ? (
-                <div className="text-center py-12">
-                  <Target size={48} className="text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg mb-4">No hay proyectos disponibles</p>
-                  {hasPermission('canCreateProjects') && (
-                    <button
-                      onClick={() => setShowCreateProject(true)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
-                    >
-                      Crear Primer Proyecto
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {userProjects.map(project => (
-                    <div key={project.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer"
-                         onClick={() => { setSelectedProject(project); setCurrentView('project'); }}>
-                      <div className="flex justify-between items-start mb-4">
-                        <h3 className="font-semibold text-lg text-gray-800">{project.name}</h3>
-                        <div className="flex flex-col items-end gap-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            project.status === 'completado' ? 'bg-green-100 text-green-800' :
-                            project.status === 'en_progreso' ? 'bg-blue-100 text-blue-800' :
-                            project.status === 'rechazado' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {project.status?.replace('_', ' ').toUpperCase()}
-                          </span>
-                          {project.needsApproval && (
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                              Pendiente Aprobación
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-gray-600 text-sm mb-4">{project.charter?.description}</p>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Progreso</span>
-                          <span className="font-medium">{project.overallProgress || 0}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div className="bg-blue-600 h-2 rounded-full" style={{width: `${project.overallProgress || 0}%`}}></div>
-                        </div>
-                        <div className="flex justify-between text-sm text-gray-500">
-                          <span>Duración: {project.charter?.duration} días</span>
-                          <span>Hitos: {project.milestones?.length || 0}</span>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Creado por: {users.find(u => u.id === project.createdBy)?.name || 'Usuario desconocido'}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Componente: Crear Proyecto
-  const CreateProject = () => {
-    const [formData, setFormData] = useState({
-      name: '',
-      charter: {
-        description: '',
-        objectives: '',
-        scope: '',
-        duration: '',
-        startDate: '',
-        endDate: ''
-      }
-    });
-
-    const handleSubmit = (e) => {
-      e.preventDefault();
-      const newProject = {
-        id: Date.now().toString(),
-        ...formData,
-        status: 'planificacion',
-        createdAt: new Date().toISOString(),
-        createdBy: currentUser.id,
-        needsApproval: currentUser.role === 'project_manager', // PM necesita aprobación
-        milestones: [],
-        monthlyBudget: [],
-        overallProgress: 0
-      };
-      
-      // CORRECCIÓN: Usar función callback para asegurar el estado más reciente
-      setProjects(prevProjects => [...prevProjects, newProject]);
-      setShowCreateProject(false);
-      setSelectedProject(newProject);
-      setCurrentView('project');
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-800">Nuevo Proyecto</h2>
-            <p className="text-gray-600">Acta de Constitución del Proyecto</p>
-          </div>
-          
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nombre del Proyecto</label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Ingresa el nombre del proyecto"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
-              <textarea
-                required
-                value={formData.charter.description}
-                onChange={(e) => setFormData({...formData, charter: {...formData.charter, description: e.target.value}})}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows="3"
-                placeholder="Describe el proyecto..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Objetivos</label>
-              <textarea
-                required
-                value={formData.charter.objectives}
-                onChange={(e) => setFormData({...formData, charter: {...formData.charter, objectives: e.target.value}})}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows="3"
-                placeholder="Define los objetivos del proyecto..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Alcance</label>
-              <textarea
-                required
-                value={formData.charter.scope}
-                onChange={(e) => setFormData({...formData, charter: {...formData.charter, scope: e.target.value}})}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows="3"
-                placeholder="Define el alcance del proyecto..."
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Duración (días)</label>
-                <input
-                  type="number"
-                  required
-                  value={formData.charter.duration}
-                  onChange={(e) => setFormData({...formData, charter: {...formData.charter, duration: e.target.value}})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="365"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Inicio</label>
-                <input
-                  type="date"
-                  required
-                  value={formData.charter.startDate}
-                  onChange={(e) => setFormData({...formData, charter: {...formData.charter, startDate: e.target.value}})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Fin</label>
-                <input
-                  type="date"
-                  required
-                  value={formData.charter.endDate}
-                  onChange={(e) => setFormData({...formData, charter: {...formData.charter, endDate: e.target.value}})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-4 pt-4">
-              <button
-                type="button"
-                onClick={() => setShowCreateProject(false)}
-                className="flex-1 px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Crear Proyecto
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  };
-
-  // Componente: Vista de Proyecto Individual (Simplificada)
-  const ProjectView = () => {
-    if (!selectedProject) return null;
-
-    return (
-      <div className="p-6 bg-gray-50 min-h-screen">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <button
-                onClick={() => setCurrentView('dashboard')}
-                className="text-blue-600 hover:text-blue-800 mb-2 flex items-center gap-2"
-              >
-                ← Volver al Dashboard
-              </button>
-              <h1 className="text-3xl font-bold text-gray-800">{selectedProject.name}</h1>
-              <p className="text-gray-600">Progreso general: {calculateOverallProgress(selectedProject)}%</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Estado</p>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                selectedProject.status === 'completado' ? 'bg-green-100 text-green-800' :
-                selectedProject.status === 'en_progreso' ? 'bg-blue-100 text-blue-800' :
-                selectedProject.status === 'rechazado' ? 'bg-red-100 text-red-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
-                {selectedProject.status?.replace('_', ' ').toUpperCase()}
-              </span>
-            </div>
-          </div>
-
-          {/* Información del Proyecto */}
-          <div className="bg-white rounded-xl shadow-lg mb-6">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-800">Información del Proyecto</h2>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="font-medium text-gray-700 mb-2">Descripción</h3>
-                  <p className="text-gray-600">{selectedProject.charter?.description}</p>
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-700 mb-2">Objetivos</h3>
-                  <p className="text-gray-600">{selectedProject.charter?.objectives}</p>
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-700 mb-2">Alcance</h3>
-                  <p className="text-gray-600">{selectedProject.charter?.scope}</p>
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-700 mb-2">Duración y Fechas</h3>
-                  <p className="text-gray-600">{selectedProject.charter?.duration} días</p>
-                  <p className="text-sm text-gray-500">
-                    {selectedProject.charter?.startDate} - {selectedProject.charter?.endDate}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Métricas de Progreso */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            {(() => {
-              const { milestoneProgress, budgetProgress, timeProgress } = calculateProgressMetrics(selectedProject);
-              
-              return [
-                {
-                  title: 'Progreso de Hitos',
-                  progress: milestoneProgress,
-                  color: 'bg-blue-50',
-                  textColor: 'text-blue-800'
-                },
-                {
-                  title: 'Progreso Presupuestal',
-                  progress: budgetProgress,
-                  color: 'bg-green-50',
-                  textColor: 'text-green-800'
-                },
-                {
-                  title: 'Progreso Temporal',
-                  progress: timeProgress,
-                  color: 'bg-purple-50',
-                  textColor: 'text-purple-800'
-                }
-              ].map((metric, index) => (
-                <div key={index} className={`${metric.color} p-6 rounded-lg`}>
-                  <h3 className={`font-semibold ${metric.textColor} mb-2`}>{metric.title}</h3>
-                  <p className={`text-2xl font-bold ${metric.textColor}`}>{metric.progress}%</p>
-                  <div className="mt-3">
-                    <div className="w-full bg-white bg-opacity-70 rounded-full h-2">
-                      <div 
-                        className="bg-current h-2 rounded-full transition-all duration-500"
-                        style={{width: `${metric.progress}%`}}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              ));
-            })()}
-          </div>
-
-          {/* Hitos del Proyecto */}
-          {selectedProject.milestones && selectedProject.milestones.length > 0 && (
-            <div className="bg-white rounded-xl shadow-lg mb-6">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800">Hitos del Proyecto</h2>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  {selectedProject.milestones.map(milestone => (
-                    <div key={milestone.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-800">{milestone.name}</h4>
-                          <p className="text-sm text-gray-600 mb-2">{milestone.description}</p>
-                          <p className="text-sm text-gray-500">Fecha: {milestone.date}</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            milestone.completed && milestone.approved ? 'bg-green-100 text-green-800' :
-                            milestone.completed ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {milestone.completed && milestone.approved ? 'Completado' :
-                             milestone.completed ? 'Pendiente Aprobación' : 'Pendiente'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Presupuesto del Proyecto */}
-          {selectedProject.monthlyBudget && selectedProject.monthlyBudget.length > 0 && (
-            <div className="bg-white rounded-xl shadow-lg mb-6">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800">Presupuesto del Proyecto</h2>
-              </div>
-              <div className="p-6">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mes</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Planificado</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ejecutado</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Variación</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {selectedProject.monthlyBudget.map(budget => (
-                        <tr key={budget.id}>
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900">{budget.month}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">${budget.planned?.toLocaleString()}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">${budget.executed?.toLocaleString()}</td>
-                          <td className={`px-4 py-3 text-sm font-medium ${
-                            (budget.executed || 0) > (budget.planned || 0) ? 'text-red-600' : 'text-green-600'
-                          }`}>
-                            ${((budget.executed || 0) - (budget.planned || 0)).toLocaleString()}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Curva S */}
-          {selectedProject.monthlyBudget && selectedProject.monthlyBudget.length > 0 && (
-            <div className="bg-white rounded-xl shadow-lg">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800">Curva S - Progreso del Proyecto</h2>
-              </div>
-              <div className="p-6">
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={generateSCurveData(selectedProject)}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="planificado" 
-                      stroke="#3B82F6" 
-                      strokeWidth={3}
-                      name="Planificado"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="ejecutado" 
-                      stroke="#10B981" 
-                      strokeWidth={3}
-                      name="Ejecutado"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // Renderizado principal
-  if (currentView === 'login') {
-    return <LoginComponent />;
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <NavigationHeader />
-      {currentView === 'dashboard' && <Dashboard />}
-      {currentView === 'users' && hasPermission('canManageUsers') && <UsersManagement />}
-      {currentView === 'approvals' && (hasPermission('canApproveProjects') || hasPermission('canApproveMilestones') || hasPermission('canApproveBudgets')) && <ApprovalsCenter />}
-      {currentView === 'project' && <ProjectView />}
-      {showCreateProject && <CreateProject />}
-      {showCreateUser && <CreateUserModal />}
-    </div>
-  );
-};
-
-export default ProjectTrackerApp;
