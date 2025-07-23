@@ -98,9 +98,29 @@ const ProjectTrackerApp = () => {
       }
     ];
 
-    setUsers(initialUsers);
-    setProjects(initialProjects);
+    const storedUsers = localStorage.getItem('users');
+    const storedProjects = localStorage.getItem('projects');
+
+    if (storedUsers) {
+      setUsers(JSON.parse(storedUsers));
+    } else {
+      setUsers(initialUsers);
+    }
+
+    if (storedProjects) {
+      setProjects(JSON.parse(storedProjects));
+    } else {
+      setProjects(initialProjects);
+    }
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('users', JSON.stringify(users));
+  }, [users]);
+
+  useEffect(() => {
+    localStorage.setItem('projects', JSON.stringify(projects));
+  }, [projects]);
 
   const permissions = {
     administrador: {
