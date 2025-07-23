@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from './supabaseClient';
 import { Plus, Calendar, DollarSign, CheckCircle, BarChart3, FileText, TrendingUp, Clock, Target, Users, Settings, LogOut, Eye, Edit, Trash2, Shield, UserCheck, UserPlus, Save, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -11,95 +12,36 @@ const ProjectTrackerApp = () => {
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  // Cargar datos iniciales
+  // Cargar datos desde Supabase
   useEffect(() => {
-    const initialUsers = [
-      {
-        id: '1',
-        username: 'admin',
-        password: 'admin123',
-        name: 'Administrador Principal',
-        email: 'admin@empresa.com',
-        role: 'administrador',
-        status: 'activo',
-        createdAt: '2025-01-01',
-        createdBy: '1'
-      },
-      {
-        id: '2',
-        username: 'gestor1',
-        password: 'gestor123',
-        name: 'María González',
-        email: 'maria.gonzalez@empresa.com',
-        role: 'gestor_seguimiento',
-        status: 'activo',
-        createdAt: '2025-01-01',
-        createdBy: '1'
-      },
-      {
-        id: '3',
-        username: 'pm1',
-        password: 'pm123',
-        name: 'Carlos Rodríguez',
-        email: 'carlos.rodriguez@empresa.com',
-        role: 'project_manager',
-        status: 'activo',
-        createdAt: '2025-01-01',
-        createdBy: '1'
-      }
-    ];
+    const fetchData = async () => {
+      setLoading(true);
+      setErrorMsg('');
+      try {
+        const { data: usersData, error: usersError } = await supabase
+          .from('users')
+          .select('*');
+        if (usersError) throw usersError;
 
-    const initialProjects = [
-      {
-        id: '1',
-        name: 'Sistema de Gestión Web',
-        status: 'en_progreso',
-        createdBy: '3',
-        approvedBy: '2',
-        needsApproval: false,
-        charter: {
-          description: 'Desarrollo de plataforma web para gestión empresarial',
-          objectives: 'Mejorar eficiencia operativa en 40%',
-          scope: 'Módulos de ventas, inventario y reportes',
-          duration: '180',
-          startDate: '2025-01-01',
-          endDate: '2025-06-30'
-        },
-        milestones: [
-          { 
-            id: '1', 
-            name: 'Análisis de Requisitos', 
-            date: '2025-02-15', 
-            description: 'Definición completa de requisitos', 
-            completed: true, 
-            approved: true,
-            createdBy: '3',
-            approvedBy: '2',
-            needsApproval: false
-          },
-          { 
-            id: '2', 
-            name: 'Diseño de Base de Datos', 
-            date: '2025-03-15', 
-            description: 'Modelo de datos final', 
-            completed: true, 
-            approved: false,
-            createdBy: '3',
-            approvedBy: null,
-            needsApproval: true
-          }
-        ],
-        monthlyBudget: [
-          { id: '1', month: 'Enero 2025', planned: 15000, executed: 14500, createdBy: '3', approvedBy: '2', needsApproval: false },
-          { id: '2', month: 'Febrero 2025', planned: 20000, executed: 18200, createdBy: '3', approvedBy: null, needsApproval: true }
-        ],
-        overallProgress: 45
-      }
-    ];
+        const { data: projectsData, error: projectsError } = await supabase
+          .from('projects')
+          .select('*');
+        if (projectsError) throw projectsError;
 
-    setUsers(initialUsers);
-    setProjects(initialProjects);
+        setUsers(usersData || []);
+        setProjects(projectsData || []);
+      } catch (err) {
+        console.error('fetch error', err);
+        setErrorMsg('Error al cargar datos');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const permissions = {
@@ -174,7 +116,7 @@ const ProjectTrackerApp = () => {
     return count;
   };
 
-  const createUser = (userData) => {
+  const createUser = async (userData) => {
     if (userData.role === 'project_manager') {
       const pmCount = users.filter(u => u.role === 'project_manager' && u.status === 'activo').length;
       if (pmCount >= 4) {
@@ -191,8 +133,23 @@ const ProjectTrackerApp = () => {
       createdBy: currentUser.id
     };
 
-    setUsers(prevUsers => [...prevUsers, newUser]);
-    return true;
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('users')
+        .insert([newUser])
+        .select()
+        .single();
+      if (error) throw error;
+      setUsers(prevUsers => [...prevUsers, data]);
+      return true;
+    } catch (err) {
+      console.error('create user error', err);
+      setErrorMsg('No se pudo crear el usuario');
+      return false;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateUser = (userId, userData) => {
@@ -1273,7 +1230,7 @@ const ProjectTrackerApp = () => {
       }
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
       e.preventDefault();
       const newProject = {
         id: Date.now().toString(),
@@ -1286,11 +1243,25 @@ const ProjectTrackerApp = () => {
         monthlyBudget: [],
         overallProgress: 0
       };
-      
-      setProjects(prevProjects => [...prevProjects, newProject]);
-      setShowCreateProject(false);
-      setSelectedProject(newProject);
-      setCurrentView('project');
+
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('projects')
+          .insert([newProject])
+          .select()
+          .single();
+        if (error) throw error;
+        setProjects(prevProjects => [...prevProjects, data]);
+        setShowCreateProject(false);
+        setSelectedProject(data);
+        setCurrentView('project');
+      } catch (err) {
+        console.error('create project error', err);
+        setErrorMsg('No se pudo crear el proyecto');
+      } finally {
+        setLoading(false);
+      }
     };
 
     return (
@@ -1630,6 +1601,16 @@ const ProjectTrackerApp = () => {
       {showCreateProject && <CreateProject />}
       {showCreateUser && <CreateUserModal />}
       {editingUser && <EditUserModal />}
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white px-4 py-2 rounded">Cargando...</div>
+        </div>
+      )}
+      {errorMsg && (
+        <div className="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg">
+          {errorMsg}
+        </div>
+      )}
     </div>
   );
 };
