@@ -2,6 +2,90 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Calendar, DollarSign, CheckCircle, BarChart3, FileText, TrendingUp, Clock, Target, Users, Settings, LogOut, Eye, Edit, Trash2, Shield, UserCheck, UserPlus, Save, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+const DEFAULT_USERS = [
+  {
+    id: '1',
+    username: 'admin',
+    password: 'admin123',
+    name: 'Administrador Principal',
+    email: 'admin@empresa.com',
+    role: 'administrador',
+    status: 'activo',
+    createdAt: '2025-01-01',
+    createdBy: '1'
+  },
+  {
+    id: '2',
+    username: 'gestor1',
+    password: 'gestor123',
+    name: 'María González',
+    email: 'maria.gonzalez@empresa.com',
+    role: 'gestor_seguimiento',
+    status: 'activo',
+    createdAt: '2025-01-01',
+    createdBy: '1'
+  },
+  {
+    id: '3',
+    username: 'pm1',
+    password: 'pm123',
+    name: 'Carlos Rodríguez',
+    email: 'carlos.rodriguez@empresa.com',
+    role: 'project_manager',
+    status: 'activo',
+    createdAt: '2025-01-01',
+    createdBy: '1'
+  }
+];
+
+const DEFAULT_PROJECTS = [
+  {
+    id: '1',
+    name: 'Sistema de Gestión Web',
+    status: 'en_progreso',
+    createdBy: '3',
+    approvedBy: '2',
+    needsApproval: false,
+    charter: {
+      description: 'Desarrollo de plataforma web para gestión empresarial',
+      objectives: 'Mejorar eficiencia operativa en 40%',
+      scope: 'Módulos de ventas, inventario y reportes',
+      duration: '180',
+      startDate: '2025-01-01',
+      endDate: '2025-06-30'
+    },
+    milestones: [
+      {
+        id: '1',
+        name: 'Análisis de Requisitos',
+        date: '2025-02-15',
+        description: 'Definición completa de requisitos',
+        completed: true,
+        approved: true,
+        createdBy: '3',
+        approvedBy: '2',
+        needsApproval: false
+      },
+      {
+        id: '2',
+        name: 'Diseño de Base de Datos',
+        date: '2025-03-15',
+        description: 'Modelo de datos final',
+        completed: true,
+        approved: false,
+        createdBy: '3',
+        approvedBy: null,
+        needsApproval: true
+      }
+    ],
+    monthlyBudget: [
+      { id: '1', month: 'Enero 2025', planned: 15000, executed: 14500, createdBy: '3', approvedBy: '2', needsApproval: false },
+      { id: '2', month: 'Febrero 2025', planned: 20000, executed: 18200, createdBy: '3', approvedBy: null, needsApproval: true }
+    ],
+    overallProgress: 45
+  }
+];
+
 const ProjectTrackerApp = () => {
   const [currentView, setCurrentView] = useState('login');
   const [currentUser, setCurrentUser] = useState(null);
@@ -14,93 +98,20 @@ const ProjectTrackerApp = () => {
 
   // Cargar datos iniciales
   useEffect(() => {
-    const initialUsers = [
-      {
-        id: '1',
-        username: 'admin',
-        password: 'admin123',
-        name: 'Administrador Principal',
-        email: 'admin@empresa.com',
-        role: 'administrador',
-        status: 'activo',
-        createdAt: '2025-01-01',
-        createdBy: '1'
-      },
-      {
-        id: '2',
-        username: 'gestor1',
-        password: 'gestor123',
-        name: 'María González',
-        email: 'maria.gonzalez@empresa.com',
-        role: 'gestor_seguimiento',
-        status: 'activo',
-        createdAt: '2025-01-01',
-        createdBy: '1'
-      },
-      {
-        id: '3',
-        username: 'pm1',
-        password: 'pm123',
-        name: 'Carlos Rodríguez',
-        email: 'carlos.rodriguez@empresa.com',
-        role: 'project_manager',
-        status: 'activo',
-        createdAt: '2025-01-01',
-        createdBy: '1'
-      }
-    ];
+    const storedUsers = localStorage.getItem('users');
+    const storedProjects = localStorage.getItem('projects');
 
-    const initialProjects = [
-      {
-        id: '1',
-        name: 'Sistema de Gestión Web',
-        status: 'en_progreso',
-        createdBy: '3',
-        approvedBy: '2',
-        needsApproval: false,
-        charter: {
-          description: 'Desarrollo de plataforma web para gestión empresarial',
-          objectives: 'Mejorar eficiencia operativa en 40%',
-          scope: 'Módulos de ventas, inventario y reportes',
-          duration: '180',
-          startDate: '2025-01-01',
-          endDate: '2025-06-30'
-        },
-        milestones: [
-          { 
-            id: '1', 
-            name: 'Análisis de Requisitos', 
-            date: '2025-02-15', 
-            description: 'Definición completa de requisitos', 
-            completed: true, 
-            approved: true,
-            createdBy: '3',
-            approvedBy: '2',
-            needsApproval: false
-          },
-          { 
-            id: '2', 
-            name: 'Diseño de Base de Datos', 
-            date: '2025-03-15', 
-            description: 'Modelo de datos final', 
-            completed: true, 
-            approved: false,
-            createdBy: '3',
-            approvedBy: null,
-            needsApproval: true
-          }
-        ],
-        monthlyBudget: [
-          { id: '1', month: 'Enero 2025', planned: 15000, executed: 14500, createdBy: '3', approvedBy: '2', needsApproval: false },
-          { id: '2', month: 'Febrero 2025', planned: 20000, executed: 18200, createdBy: '3', approvedBy: null, needsApproval: true }
-        ],
-        overallProgress: 45
-      }
-    ];
-
-    setUsers(initialUsers);
-    setProjects(initialProjects);
+    setUsers(storedUsers ? JSON.parse(storedUsers) : DEFAULT_USERS);
+    setProjects(storedProjects ? JSON.parse(storedProjects) : DEFAULT_PROJECTS);
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('users', JSON.stringify(users));
+  }, [users]);
+
+  useEffect(() => {
+    localStorage.setItem('projects', JSON.stringify(projects));
+  }, [projects]);
 
   const permissions = {
     administrador: {
