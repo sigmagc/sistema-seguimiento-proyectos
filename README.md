@@ -48,3 +48,15 @@ npm run build
 
 # Servir en producción
 npm start
+```
+
+## Configuración de Supabase
+
+Crea un archivo `.env` en la raíz del proyecto con tus credenciales de Supabase:
+
+```bash
+REACT_APP_SUPABASE_URL=tu_url
+REACT_APP_SUPABASE_ANON_KEY=tu_clave
+```
+
+Cada desarrollador debe proporcionar sus propias claves.
