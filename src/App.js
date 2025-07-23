@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Calendar, DollarSign, CheckCircle, BarChart3, FileText, TrendingUp, Clock, Target, Users, Settings, LogOut, Eye, Edit, Trash2, Shield, UserCheck, UserPlus, Save, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { supabase } from './supabaseClient';
 
 const ProjectTrackerApp = () => {
   const [currentView, setCurrentView] = useState('login');
@@ -12,95 +13,118 @@ const ProjectTrackerApp = () => {
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
 
-  // Cargar datos iniciales
+  // Cargar datos desde Supabase o localStorage
   useEffect(() => {
-    const initialUsers = [
-      {
-        id: '1',
-        username: 'admin',
-        password: 'admin123',
-        name: 'Administrador Principal',
-        email: 'admin@empresa.com',
-        role: 'administrador',
-        status: 'activo',
-        createdAt: '2025-01-01',
-        createdBy: '1'
-      },
-      {
-        id: '2',
-        username: 'gestor1',
-        password: 'gestor123',
-        name: 'María González',
-        email: 'maria.gonzalez@empresa.com',
-        role: 'gestor_seguimiento',
-        status: 'activo',
-        createdAt: '2025-01-01',
-        createdBy: '1'
-      },
-      {
-        id: '3',
-        username: 'pm1',
-        password: 'pm123',
-        name: 'Carlos Rodríguez',
-        email: 'carlos.rodriguez@empresa.com',
-        role: 'project_manager',
-        status: 'activo',
-        createdAt: '2025-01-01',
-        createdBy: '1'
-      }
-    ];
-
-    const initialProjects = [
-      {
-        id: '1',
-        name: 'Sistema de Gestión Web',
-        status: 'en_progreso',
-        createdBy: '3',
-        approvedBy: '2',
-        needsApproval: false,
-        charter: {
-          description: 'Desarrollo de plataforma web para gestión empresarial',
-          objectives: 'Mejorar eficiencia operativa en 40%',
-          scope: 'Módulos de ventas, inventario y reportes',
-          duration: '180',
-          startDate: '2025-01-01',
-          endDate: '2025-06-30'
+    const loadData = async () => {
+      const defaultUsers = [
+        {
+          id: '1',
+          username: 'admin',
+          password: 'admin123',
+          name: 'Administrador Principal',
+          email: 'admin@empresa.com',
+          role: 'administrador',
+          status: 'activo',
+          createdAt: '2025-01-01',
+          createdBy: '1'
         },
-        milestones: [
-          { 
-            id: '1', 
-            name: 'Análisis de Requisitos', 
-            date: '2025-02-15', 
-            description: 'Definición completa de requisitos', 
-            completed: true, 
-            approved: true,
-            createdBy: '3',
-            approvedBy: '2',
-            needsApproval: false
-          },
-          { 
-            id: '2', 
-            name: 'Diseño de Base de Datos', 
-            date: '2025-03-15', 
-            description: 'Modelo de datos final', 
-            completed: true, 
-            approved: false,
-            createdBy: '3',
-            approvedBy: null,
-            needsApproval: true
-          }
-        ],
-        monthlyBudget: [
-          { id: '1', month: 'Enero 2025', planned: 15000, executed: 14500, createdBy: '3', approvedBy: '2', needsApproval: false },
-          { id: '2', month: 'Febrero 2025', planned: 20000, executed: 18200, createdBy: '3', approvedBy: null, needsApproval: true }
-        ],
-        overallProgress: 45
-      }
-    ];
+        {
+          id: '2',
+          username: 'gestor1',
+          password: 'gestor123',
+          name: 'María González',
+          email: 'maria.gonzalez@empresa.com',
+          role: 'gestor_seguimiento',
+          status: 'activo',
+          createdAt: '2025-01-01',
+          createdBy: '1'
+        },
+        {
+          id: '3',
+          username: 'pm1',
+          password: 'pm123',
+          name: 'Carlos Rodríguez',
+          email: 'carlos.rodriguez@empresa.com',
+          role: 'project_manager',
+          status: 'activo',
+          createdAt: '2025-01-01',
+          createdBy: '1'
+        }
+      ];
 
-    setUsers(initialUsers);
-    setProjects(initialProjects);
+      const defaultProjects = [
+        {
+          id: '1',
+          name: 'Sistema de Gestión Web',
+          status: 'en_progreso',
+          createdBy: '3',
+          approvedBy: '2',
+          needsApproval: false,
+          charter: {
+            description: 'Desarrollo de plataforma web para gestión empresarial',
+            objectives: 'Mejorar eficiencia operativa en 40%',
+            scope: 'Módulos de ventas, inventario y reportes',
+            duration: '180',
+            startDate: '2025-01-01',
+            endDate: '2025-06-30'
+          },
+          milestones: [
+            {
+              id: '1',
+              name: 'Análisis de Requisitos',
+              date: '2025-02-15',
+              description: 'Definición completa de requisitos',
+              completed: true,
+              approved: true,
+              createdBy: '3',
+              approvedBy: '2',
+              needsApproval: false
+            },
+            {
+              id: '2',
+              name: 'Diseño de Base de Datos',
+              date: '2025-03-15',
+              description: 'Modelo de datos final',
+              completed: true,
+              approved: false,
+              createdBy: '3',
+              approvedBy: null,
+              needsApproval: true
+            }
+          ],
+          monthlyBudget: [
+            { id: '1', month: 'Enero 2025', planned: 15000, executed: 14500, createdBy: '3', approvedBy: '2', needsApproval: false },
+            { id: '2', month: 'Febrero 2025', planned: 20000, executed: 18200, createdBy: '3', approvedBy: null, needsApproval: true }
+          ],
+          overallProgress: 45
+        }
+      ];
+
+      try {
+        const { data: supaUsers, error: usersError } = await supabase.from('users').select('*');
+        const { data: supaProjects, error: projectsError } = await supabase.from('projects').select('*');
+
+        const loadedUsers = usersError || !supaUsers ? null : supaUsers;
+        const loadedProjects = projectsError || !supaProjects ? null : supaProjects;
+
+        setUsers(loadedUsers ?? JSON.parse(localStorage.getItem('users')) ?? defaultUsers);
+        setProjects(loadedProjects ?? JSON.parse(localStorage.getItem('projects')) ?? defaultProjects);
+      } catch (err) {
+        setUsers(JSON.parse(localStorage.getItem('users')) ?? defaultUsers);
+        setProjects(JSON.parse(localStorage.getItem('projects')) ?? defaultProjects);
+      }
+    };
+
+    loadData();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('users', JSON.stringify(users));
+  }, [users]);
+
+  useEffect(() => {
+    localStorage.setItem('projects', JSON.stringify(projects));
+  }, [projects]);
 
   const permissions = {
     administrador: {
@@ -174,7 +198,7 @@ const ProjectTrackerApp = () => {
     return count;
   };
 
-  const createUser = (userData) => {
+  const createUser = async (userData) => {
     if (userData.role === 'project_manager') {
       const pmCount = users.filter(u => u.role === 'project_manager' && u.status === 'activo').length;
       if (pmCount >= 4) {
@@ -192,29 +216,48 @@ const ProjectTrackerApp = () => {
     };
 
     setUsers(prevUsers => [...prevUsers, newUser]);
+
+    try {
+      await supabase.from('users').insert([newUser]);
+    } catch (err) {
+      console.error('Error saving user to Supabase', err);
+    }
+
     return true;
   };
 
-  const updateUser = (userId, userData) => {
-    setUsers(prevUsers => prevUsers.map(user => 
+  const updateUser = async (userId, userData) => {
+    setUsers(prevUsers => prevUsers.map(user =>
       user.id === userId ? { ...user, ...userData } : user
     ));
+
+    try {
+      await supabase.from('users').update(userData).eq('id', userId);
+    } catch (err) {
+      console.error('Error updating user in Supabase', err);
+    }
   };
 
-  const deleteUser = (userId) => {
+  const deleteUser = async (userId) => {
     if (userId === currentUser.id) {
       alert('No puedes eliminarte a ti mismo');
       return;
     }
     
     if (window.confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
-      setUsers(prevUsers => prevUsers.map(user => 
+      setUsers(prevUsers => prevUsers.map(user =>
         user.id === userId ? { ...user, status: 'inactivo' } : user
       ));
+
+      try {
+        await supabase.from('users').update({ status: 'inactivo' }).eq('id', userId);
+      } catch (err) {
+        console.error('Error deleting user in Supabase', err);
+      }
     }
   };
 
-  const deleteProject = (projectId) => {
+  const deleteProject = async (projectId) => {
     const project = projects.find(p => p.id === projectId);
     if (!project) return;
 
@@ -225,10 +268,16 @@ const ProjectTrackerApp = () => {
 
     if (window.confirm(`¿Estás seguro de que deseas eliminar el proyecto "${project.name}"? Esta acción no se puede deshacer.`)) {
       setProjects(prevProjects => prevProjects.filter(p => p.id !== projectId));
-      
+
       if (selectedProject && selectedProject.id === projectId) {
         setSelectedProject(null);
         setCurrentView('dashboard');
+      }
+
+      try {
+        await supabase.from('projects').delete().eq('id', projectId);
+      } catch (err) {
+        console.error('Error deleting project in Supabase', err);
       }
     }
   };
@@ -436,7 +485,7 @@ const ProjectTrackerApp = () => {
     });
     const [error, setError] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
       e.preventDefault();
       setError('');
 
@@ -450,7 +499,7 @@ const ProjectTrackerApp = () => {
         return;
       }
 
-      if (createUser(formData)) {
+      if (await createUser(formData)) {
         setShowCreateUser(false);
         setFormData({ username: '', password: '', name: '', email: '', role: 'project_manager' });
         setError('');
@@ -575,7 +624,7 @@ const ProjectTrackerApp = () => {
     });
     const [error, setError] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
       e.preventDefault();
       setError('');
 
@@ -599,7 +648,7 @@ const ProjectTrackerApp = () => {
         }
       }
 
-      updateUser(editingUser.id, formData);
+      await updateUser(editingUser.id, formData);
       setEditingUser(null);
       setError('');
       alert(`Usuario "${formData.name}" actualizado exitosamente`);
@@ -1273,7 +1322,7 @@ const ProjectTrackerApp = () => {
       }
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
       e.preventDefault();
       const newProject = {
         id: Date.now().toString(),
@@ -1288,6 +1337,12 @@ const ProjectTrackerApp = () => {
       };
       
       setProjects(prevProjects => [...prevProjects, newProject]);
+
+      try {
+        await supabase.from('projects').insert([newProject]);
+      } catch (err) {
+        console.error('Error saving project to Supabase', err);
+      }
       setShowCreateProject(false);
       setSelectedProject(newProject);
       setCurrentView('project');
