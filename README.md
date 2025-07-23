@@ -48,3 +48,38 @@ npm run build
 
 # Servir en producción
 npm start
+
+## Configuración de Supabase
+
+1. Crea un proyecto en [Supabase](https://supabase.com) y copia la URL y la clave anónima en `src/supabaseClient.js`.
+2. En el panel de SQL ejecuta el siguiente script para crear las tablas básicas:
+
+```sql
+create table users (
+  id uuid primary key default uuid_generate_v4(),
+  username text unique not null,
+  password text not null,
+  name text not null,
+  email text unique not null,
+  role text not null,
+  status text default 'activo',
+  created_at timestamp with time zone default now(),
+  created_by uuid
+);
+
+create table projects (
+  id uuid primary key default uuid_generate_v4(),
+  name text not null,
+  status text,
+  created_by uuid references users(id),
+  approved_by uuid,
+  needs_approval boolean default false,
+  charter jsonb,
+  milestones jsonb,
+  monthly_budget jsonb,
+  overall_progress integer default 0,
+  created_at timestamp with time zone default now()
+);
+```
+
+Estas tablas almacenan la información utilizada por la aplicación para usuarios y proyectos.
