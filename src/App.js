@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Calendar, DollarSign, CheckCircle, BarChart3, FileText, TrendingUp, Clock, Target, Users, Settings, LogOut, Eye, Edit, Trash2, Shield, UserCheck, UserPlus, Save, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { supabase } from './supabaseClient';
 
 const ProjectTrackerApp = () => {
   const [currentView, setCurrentView] = useState('login');
@@ -98,28 +99,43 @@ const ProjectTrackerApp = () => {
       }
     ];
 
-    const storedUsers = localStorage.getItem('users');
-    const storedProjects = localStorage.getItem('projects');
+    const fetchData = async () => {
+      try {
+        const { data: usersData, error: usersError } = await supabase.from('users').select('*');
+        if (usersError) console.error('Error fetching users', usersError);
+        setUsers(usersData && usersData.length > 0 ? usersData : initialUsers);
 
-    if (storedUsers) {
-      setUsers(JSON.parse(storedUsers));
-    } else {
-      setUsers(initialUsers);
-    }
+        const { data: projectsData, error: projectsError } = await supabase.from('projects').select('*');
+        if (projectsError) console.error('Error fetching projects', projectsError);
+        setProjects(projectsData && projectsData.length > 0 ? projectsData : initialProjects);
+      } catch (err) {
+        console.error('Error loading data from Supabase', err);
+        setUsers(initialUsers);
+        setProjects(initialProjects);
+      }
+    };
 
-    if (storedProjects) {
-      setProjects(JSON.parse(storedProjects));
-    } else {
-      setProjects(initialProjects);
-    }
+    fetchData();
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('users', JSON.stringify(users));
+    const syncUsers = async () => {
+      if (users.length === 0) return;
+      const { error } = await supabase.from('users').upsert(users);
+      if (error) console.error('Error saving users', error);
+    };
+
+    syncUsers();
   }, [users]);
 
   useEffect(() => {
-    localStorage.setItem('projects', JSON.stringify(projects));
+    const syncProjects = async () => {
+      if (projects.length === 0) return;
+      const { error } = await supabase.from('projects').upsert(projects);
+      if (error) console.error('Error saving projects', error);
+    };
+
+    syncProjects();
   }, [projects]);
 
   const permissions = {
@@ -194,7 +210,7 @@ const ProjectTrackerApp = () => {
     return count;
   };
 
-  const createUser = (userData) => {
+  const createUser = async (userData) => {
     if (userData.role === 'project_manager') {
       const pmCount = users.filter(u => u.role === 'project_manager' && u.status === 'activo').length;
       if (pmCount >= 4) {
@@ -211,30 +227,41 @@ const ProjectTrackerApp = () => {
       createdBy: currentUser.id
     };
 
+    const { error } = await supabase.from('users').insert(newUser);
+    if (error) {
+      console.error('Error creating user', error);
+      return false;
+    }
+
     setUsers(prevUsers => [...prevUsers, newUser]);
     return true;
   };
 
-  const updateUser = (userId, userData) => {
-    setUsers(prevUsers => prevUsers.map(user => 
+  const updateUser = async (userId, userData) => {
+    const { error } = await supabase.from('users').update(userData).eq('id', userId);
+    if (error) console.error('Error updating user', error);
+    setUsers(prevUsers => prevUsers.map(user =>
       user.id === userId ? { ...user, ...userData } : user
     ));
   };
 
-  const deleteUser = (userId) => {
+  const deleteUser = async (userId) => {
     if (userId === currentUser.id) {
       alert('No puedes eliminarte a ti mismo');
       return;
     }
-    
+
     if (window.confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
-      setUsers(prevUsers => prevUsers.map(user => 
-        user.id === userId ? { ...user, status: 'inactivo' } : user
-      ));
+      const { error } = await supabase.from('users').delete().eq('id', userId);
+      if (error) {
+        console.error('Error deleting user', error);
+        return;
+      }
+      setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
     }
   };
 
-  const deleteProject = (projectId) => {
+  const deleteProject = async (projectId) => {
     const project = projects.find(p => p.id === projectId);
     if (!project) return;
 
@@ -244,6 +271,11 @@ const ProjectTrackerApp = () => {
     }
 
     if (window.confirm(`¿Estás seguro de que deseas eliminar el proyecto "${project.name}"? Esta acción no se puede deshacer.`)) {
+      const { error } = await supabase.from('projects').delete().eq('id', projectId);
+      if (error) {
+        console.error('Error deleting project', error);
+        return;
+      }
       setProjects(prevProjects => prevProjects.filter(p => p.id !== projectId));
       
       if (selectedProject && selectedProject.id === projectId) {
@@ -456,7 +488,7 @@ const ProjectTrackerApp = () => {
     });
     const [error, setError] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
       e.preventDefault();
       setError('');
 
@@ -470,7 +502,7 @@ const ProjectTrackerApp = () => {
         return;
       }
 
-      if (createUser(formData)) {
+      if (await createUser(formData)) {
         setShowCreateUser(false);
         setFormData({ username: '', password: '', name: '', email: '', role: 'project_manager' });
         setError('');
@@ -595,7 +627,7 @@ const ProjectTrackerApp = () => {
     });
     const [error, setError] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
       e.preventDefault();
       setError('');
 
@@ -619,7 +651,7 @@ const ProjectTrackerApp = () => {
         }
       }
 
-      updateUser(editingUser.id, formData);
+      await updateUser(editingUser.id, formData);
       setEditingUser(null);
       setError('');
       alert(`Usuario "${formData.name}" actualizado exitosamente`);
@@ -1293,7 +1325,7 @@ const ProjectTrackerApp = () => {
       }
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
       e.preventDefault();
       const newProject = {
         id: Date.now().toString(),
@@ -1306,7 +1338,13 @@ const ProjectTrackerApp = () => {
         monthlyBudget: [],
         overallProgress: 0
       };
-      
+
+      const { error } = await supabase.from('projects').insert(newProject);
+      if (error) {
+        console.error('Error creating project', error);
+        return;
+      }
+
       setProjects(prevProjects => [...prevProjects, newProject]);
       setShowCreateProject(false);
       setSelectedProject(newProject);
