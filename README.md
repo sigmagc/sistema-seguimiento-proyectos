@@ -36,6 +36,7 @@ Sistema integral de gestión y seguimiento de proyectos con control de usuarios 
 
 ## Instalación y Uso
 
+Antes de ejecutar el proyecto copia el archivo `.env.example` a `.env` y completa los valores de `REACT_APP_SUPABASE_URL` y `REACT_APP_SUPABASE_ANON_KEY`.
 ```bash
 # Instalar dependencias
 npm install
