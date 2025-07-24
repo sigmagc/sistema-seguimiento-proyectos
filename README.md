@@ -51,3 +51,7 @@ npm run build
 npm start
 ```
 
+
+## Licencia
+
+Este proyecto se distribuye bajo la [Licencia MIT](LICENSE).
