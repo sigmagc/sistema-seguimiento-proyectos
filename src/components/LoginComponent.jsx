@@ -7,10 +7,13 @@ const LoginComponent = ({ users, setCurrentUser, setCurrentView }) => {
 
   const handleLogin = (e) => {
     e.preventDefault();
+    const trimmedUsername = credentials.username.trim();
+    const trimmedPassword = credentials.password.trim();
+
     const user = users.find(
       (u) =>
-        u.username === credentials.username &&
-        u.password === credentials.password &&
+        u.username === trimmedUsername &&
+        u.password === trimmedPassword &&
         u.status === 'activo'
     );
 
