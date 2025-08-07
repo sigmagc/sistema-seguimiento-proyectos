@@ -10,11 +10,47 @@ import Dashboard from './components/Dashboard';
 import CreateProject from './components/CreateProject';
 import ProjectView from './components/ProjectView';
 
+const initialUsers = [
+  {
+    id: '1',
+    username: 'admin',
+    password: 'admin123',
+    name: 'Administrador Principal',
+    email: 'admin@empresa.com',
+    role: 'administrador',
+    status: 'activo',
+    createdAt: '2025-01-01',
+    createdBy: '1'
+  },
+  {
+    id: '2',
+    username: 'gestor1',
+    password: 'gestor123',
+    name: 'María González',
+    email: 'maria.gonzalez@empresa.com',
+    role: 'gestor_seguimiento',
+    status: 'activo',
+    createdAt: '2025-01-01',
+    createdBy: '1'
+  },
+  {
+    id: '3',
+    username: 'pm1',
+    password: 'pm123',
+    name: 'Carlos Rodríguez',
+    email: 'carlos.rodriguez@empresa.com',
+    role: 'project_manager',
+    status: 'activo',
+    createdAt: '2025-01-01',
+    createdBy: '1'
+  }
+];
+
 const ProjectTrackerApp = () => {
   const [currentView, setCurrentView] = useState('login');
   const [currentUser, setCurrentUser] = useState(null);
   const [projects, setProjects] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState(initialUsers);
   const [selectedProject, setSelectedProject] = useState(null);
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [showCreateUser, setShowCreateUser] = useState(false);
@@ -22,42 +58,6 @@ const ProjectTrackerApp = () => {
 
   // Cargar datos iniciales
   useEffect(() => {
-    const initialUsers = [
-      {
-        id: '1',
-        username: 'admin',
-        password: 'admin123',
-        name: 'Administrador Principal',
-        email: 'admin@empresa.com',
-        role: 'administrador',
-        status: 'activo',
-        createdAt: '2025-01-01',
-        createdBy: '1'
-      },
-      {
-        id: '2',
-        username: 'gestor1',
-        password: 'gestor123',
-        name: 'María González',
-        email: 'maria.gonzalez@empresa.com',
-        role: 'gestor_seguimiento',
-        status: 'activo',
-        createdAt: '2025-01-01',
-        createdBy: '1'
-      },
-      {
-        id: '3',
-        username: 'pm1',
-        password: 'pm123',
-        name: 'Carlos Rodríguez',
-        email: 'carlos.rodriguez@empresa.com',
-        role: 'project_manager',
-        status: 'activo',
-        createdAt: '2025-01-01',
-        createdBy: '1'
-      }
-    ];
-
     const initialProjects = [
       {
         id: '1',
