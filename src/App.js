@@ -108,9 +108,31 @@ const ProjectTrackerApp = () => {
 
     const fetchData = async () => {
       try {
-        const { data: usersData, error: usersError } = await supabase.from('users').select('*');
+        const { data: usersData, error: usersError } = await supabase
+          .from('users')
+          .select('*');
         if (usersError) console.error('Error fetching users', usersError);
-        setUsers(usersData && usersData.length > 0 ? usersData : initialUsers);
+
+        let finalUsers;
+        if (usersData && usersData.length > 0) {
+          const hasAdmin = usersData.some((user) => user.username === 'admin');
+          if (!hasAdmin) {
+            const adminUser = initialUsers.find(
+              (user) => user.username === 'admin'
+            );
+            if (adminUser) {
+              await supabase.from('users').upsert([adminUser]);
+              finalUsers = [...usersData, adminUser];
+            } else {
+              finalUsers = usersData;
+            }
+          } else {
+            finalUsers = usersData;
+          }
+        } else {
+          finalUsers = initialUsers;
+        }
+        setUsers(finalUsers);
 
         const { data: projectsData, error: projectsError } = await supabase.from('projects').select('*');
         if (projectsError) console.error('Error fetching projects', projectsError);
